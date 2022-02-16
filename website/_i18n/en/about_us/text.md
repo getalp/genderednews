@@ -1,0 +1,3 @@
+The GenderedNews project is conducted by <a href="https://gillesbastin.github.io/">Gilles Bastin</a> (Laboratoire Pacte, Sciences Po Grenoble / UGA), <a href="https://lig-membres.imag.fr/portet/home.php">François Portet</a> (Laboratoire d’Informatique de Grenoble, UGA) and <a href="https://www.pacte-grenoble.fr/membres/ange-richard">Ange Richard</a> (Pacte et LIG).
+
+This website, as well as the processing pipeline (collection of articles, creation of database, setting up of text processing and rate computing, interface web design) has been created from scratch as part of a project by four students at Polytech Grenoble: Nhat Quang Ho, Mica Murphy, Gloria Nguena and Antoine Saget. 

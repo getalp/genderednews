@@ -1,0 +1,17 @@
+spacy==2.3.5
+Faker==8.1.2
+tidytext==0.0.1
+newspaper3k==0.2.8
+stanza==1.2
+requests==2.25.1
+nltk==3.5
+feedparser==6.0.2
+pandas==1.2.3
+gender_guesser==0.4.0
+pymongo==3.11.3
+beautifulsoup4==4.9.3
+newspaper3k==0.2.8
+python-dotenv==0.17.0
+tweepy==3.10.0
+pytest==6.2.2
+sshtunnel==0.4.0

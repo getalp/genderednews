@@ -1,0 +1,1 @@
+GenderedNews is a research project by the Université Grenoble Alpes (<a href="https://www.univ-grenoble-alpes.fr/">https://www.univ-grenoble-alpes.fr/</a>). It combines the Algorithmic Society chair and the Artificial Intelligence & Language chair of MIAI (<a href="https://miai.univ-grenoble-alpes.fr/">https://miai.univ-grenoble-alpes.fr/</a>).

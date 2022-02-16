@@ -1,0 +1,27 @@
+# main links
+main:
+  - title_en: "Home"
+    title_fr: "Accueil"
+    url: /
+  - title_en: "Metrics"
+    title_fr: "Mesures"
+    #url: /metrics/
+    sub:
+      - title_en: "Mentions"
+        title_fr: "Mentions"
+        url: /metrics/mentions/
+      - title_en: "Quotes"
+        title_fr: "Citations"
+        url: /metrics/quotes/
+  - title_en: "Data"
+    title_fr: "Données"
+    url: /data/
+  - title_en: "Methodology"
+    title_fr: "Méthodologie"
+    url: /methodology/
+  - title_en: "About us"
+    title_fr: "À propos"
+    url: /about_us/
+  - title_en: "Contact"
+    title_fr: "Contact"
+    url: /contact/

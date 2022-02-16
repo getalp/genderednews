@@ -1,0 +1,5 @@
+GenderedNews mesure les inégalités de mention et de citation des hommes et des femmes dans les articles publiés par les principaux journaux français. Ces mesures permettent de rendre visible la part très importante des contenus des médias consacrée aux hommes, que ce soit en termes de mentions (le fait de parler d'hommes dans les articles) ou de citations (le fait de donner la parole à des hommes). Elles permettent aussi de visualiser les différences entre journaux et l'évolution de ces pratiques dans le temps.
+
+Ce site web est actualisé tous les jours. Les résultats ci-dessous ne portent que sur les sept derniers jours. Pour avoir accès aux résultats détaillés depuis le début du projet, consultez les pages « Mesures » du site.
+
+GenderedNews est un projet de recherche de l’[Université Grenoble Alpes](https://www.univ-grenoble-alpes.fr/). Il associe la [chaire Société algorithmique](https://algorithmicsociety.github.io/) et la chaire Intelligence Artificielle & Language de [MIAI](https://miai.univ-grenoble-alpes.fr/).

@@ -1,0 +1,17 @@
+pages:
+    home: Page d'Accueil
+    metrics: Mesures
+    mentions: Mentions
+    quotes: Citations
+    about_us: À propos
+    methodology: Méthodologie
+    data: Données
+    contact: Contact
+about_us:
+    author_name: 
+    author_bio: 
+contact:
+    enter_email : Entrez votre email
+    enter_comment : Entrez cotre commentaire
+    comment: Commentaire
+    send: Envoyer

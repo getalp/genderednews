@@ -1,0 +1,354 @@
+---
+title: "Exemple de traitement des données pour la mesure de la masculinité des articles dans GenderedNews"
+output: html_notebook
+---
+
+Ce script R présente le traitement de données Europresse pour la mesure de niveaux de masculinité.
+
+Les données brutes traitées sont sous la forme de fichiers html téléchargés sur Europresse.
+
+La méthode repose sur les étapes suivantes :
+
+1. Traitement des fichiers html pour produire un csv propre (optionnel si autre méthode de collecte)
+2. Import des données prénoms pour la genderisation
+3. Nettoyage des données Texte
+4. Création de variables intéressantes
+5. Calcul du niveau de masculinité
+6. Visualisation
+
+RQ : Les fichiers html d'exemple sont une partie d'un corpus de +/- 40k articles de presse de 6 titres différents contenant "assemblée nationale" ET (député OU députée) entre 1980 et 2020. Corpus collecté sur Europresse en octobre 2020.
+
+## 0. Espace de travail
+
+### 0.1. Packages
+
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse) # dplyr, ggplot2, tidyr, readr, purr, tibble, stringr, forcats
+library(lubridate)
+library(xml2)  
+library(XML)
+library(stringdist)  
+library(stringi)  
+library(tidytext)
+library(stopwords)
+library(topicmodels) # LDA
+library(betareg) # regressions sur des probabilités [0,1]
+library(reshape2)
+```
+
+### 0.2. Options
+
+```{r, message = FALSE, warning = FALSE}
+rm(list=ls())   # remove all variables from the workspace
+options(digits=3) # 3 chiffres après la virgules utiles pour les indices
+options(scipen=999) # désactive la notation scientique
+options(encoding = "UTF-8") # pour les accents
+Sys.getlocale()
+```
+
+### 0.3. Fonctions utiles pour traiter les données Europresse
+
+On définit les deux fonctions crées par Corentin Roquebert pour parser les html tirés de Europresse (cf. https://quanti.hypotheses.org/1416).
+
+```{r, message = FALSE, warning = FALSE}
+LIRE <- function(html) {
+  
+  doc <- htmlParse(html) # On parse le document
+  
+  articles <- getNodeSet(doc, "//article") # On récupère chaque article séparément
+  
+ journal <- sapply(articles, function(art) {
+    journ <- xpathSApply(art, "./header/div[1]/span/text()", xmlValue)
+    journ[[1]]
+  })
+  
+  
+  auteur <- sapply(articles, function(art) { # On récupère l'auteur de chaque article
+    aut <- xpathSApply(art, "./header/div[@class='docAuthors']/text()", xmlValue)
+    aut <- aut[[1]]
+    if (is.null(aut)) aut <- NA
+    aut
+  })
+  
+  titre <- sapply(articles, function(art) { # On récupère le titre de chaque article
+    tmp <- xpathSApply(art, "./header/div[@class='titreArticle']//text()", xmlValue)
+    if (is.null(tmp)) tmp <- NA
+    tmp <- paste(tmp, collapse = "")
+    
+    str_trim(tmp)
+  })
+  
+  date <- sapply(articles, function(art) { # On récupère la date de chaque article
+    tmp <- xpathSApply(art, ".//div[@class='publiC-lblNodoc']//text()", xmlValue)
+    if (is.null(tmp)) tmp <- NA
+    tmp <- substr(tmp, 6, 13)
+    tmp
+  })
+  date <- as.Date(date, "%Y%m%d") # On met la date au bon format
+  
+  texte <- sapply(articles, function(art) { # Enfin, on récupère le texte de ces articles
+    tmp <- xpathSApply(art, ".//div[@class='DocText clearfix']//text()", xmlValue)
+    if (is.null(tmp)) tmp <- NA
+    tmp <- paste(tmp, collapse = "")
+    str_trim(tmp)
+  })
+
+  # Il ne reste plus qu'à compiler ces informations dans une base de données lisible.
+    txt <- data.frame(Journal = journal,
+                    Titre = titre,
+                    Date = date,
+                    Auteur = auteur,
+                    Texte = texte)
+  
+  # Maintenant qu'on a toutes les infos, on enlève les lignes NA (celles qui n'ont pas de nom de journaux ou de titre) (étape qu'on peut enlever mais qui semble plus prudente)
+    
+  txt <- subset(txt, !is.na(Journal) & !is.na(Titre))
+  
+  txt
+  
+} 
+```
+
+```{r, message = FALSE, warning = FALSE}
+lire_dossier <- function(chemin) {
+
+  list<-list.files(chemin, pattern= ".HTML", full.names=TRUE, recursive=TRUE)
+
+  l <- lapply(list, function(file) {
+    print(file)
+    LIRE(html=file)
+  })
+  bind_rows(l)
+  
+}  
+```
+
+## 1. Import du corpus Europresse
+
+On applique les deux fonctions aux fichiers html et on crée le df :
+
+```{r, message = FALSE, warning = FALSE}
+df <- lire_dossier(".") 
+```
+
+On produit un csv pour le stockage plus simple des données :
+
+```{r, message = FALSE, warning = FALSE}
+write.csv2(df, file="df.csv", row.names = FALSE)
+```
+
+## 2. Import de donnés prénoms
+
+Pour calculer le taux de masculinité des prénoms des auteurs et celui du texte des articles on doit commencer par importer le df prenoms
+dans sa version nettoyée et changer le nom de la variable preusuel :
+
+```{r, message = FALSE, warning = FALSE}
+prenoms <- read_csv2("prenoms_clean.csv")
+colnames(prenoms)[1] <- "word"
+head(prenoms)
+```
+
+## 3. Nettoyage des variables texte
+
+Le titre du journal et le texte de l'article sont en format character et doivent être nettoyées.
+
+### 3.1. Journal
+
+On a d'abord une variable journal assez sale :
+
+```{r, message = FALSE, warning = FALSE}
+df %>% count(Journal)
+```
+
+On nettoie tout ça :
+
+```{r, message = FALSE, warning = FALSE}
+df %>% count(Journal)  
+df$Journal_clean <- NULL  
+df$Journal_clean[stri_detect_fixed(df$Journal, "figaro", case_insensitive=T)] <- "Le Figaro"
+df$Journal_clean[stri_detect_fixed(df$Journal, "libération", case_insensitive=T)] <- "Libération"  
+df$Journal_clean[stri_detect_fixed(df$Journal, "monde", case_insensitive=T)] <- "Le Monde"  
+df$Journal_clean[stri_detect_fixed(df$Journal, "humanité", case_insensitive=T)] <- "L'Humanité"  
+df$Journal_clean[stri_detect_fixed(df$Journal, "croix", case_insensitive=T)] <- "La Croix"  
+df$Journal_clean[stri_detect_fixed(df$Journal, "aujourd'hui", case_insensitive=T)] <- "Aujourd'hui en France"  
+df %>% count(Journal_clean)  
+```
+
+Et on passe la nouvelle variable en factor :
+
+```{r}
+df$Journal_clean <- as.factor(df$Journal_clean)
+```
+
+### 3.2. Texte des articles
+
+On reprend les propositions de nettoyage de Roquebert :
+
+```{r, message = FALSE, warning = FALSE}
+# On enlève tout ce qui est entre balise (des balises restent en effet souvent) : 
+df$Texte<- gsub ("", "", df$Texte)
+df$Titre<- gsub ("", "", df$Titre)
+
+# On enlève les adresses mails (souvent situés en début ou en fin d'article)
+df$Texte<- gsub (" [^ ]*@.[^ ]* ", " ", df$Texte)
+df$Titre<- gsub (" [^ ]*@.[^ ]* ", " ", df$Titre)
+
+# Souvent, on retrouve en début de texte une mention "mis ? jour le ..."
+df$Texte<- gsub(".is à jour le .{20}[^ ]* ", "", df$Texte) # On enlève dès qu'il est question de "mis à jour le" et les 20 caractères qui suivent jusqu'au prochain espace.
+```
+
+Et on ajoute :
+
+```{r, message = FALSE, warning = FALSE}
+## Passage en UTF-8 (utile ?)
+df$Texte <- iconv(df$Texte, to = "UTF-8")
+```
+
+## 4. Création de variables
+
+### 4.1 ID_Article
+
+```{r, message = FALSE, warning = FALSE}
+## On crée une variable identifiant unique article (on en aura besoin plus bas)
+df <- df %>%
+  arrange(Date) %>%
+  mutate(ID_Article = row_number())
+```
+
+### 4.2 Length_Article
+
+```{r, message = FALSE, warning = FALSE}
+## On crée une variable longueur de l'article
+df <- df %>%
+  mutate(Length_Article = nchar(Texte))
+```
+
+### 4.3. Variables de Date
+
+On produit plusieurs variables permettant différents traitements sur les dates des articles (par semaine, mois, annee).
+
+On commence par une variable Annee :
+
+```{r, message = FALSE, warning = FALSE}
+## On crée une variable Année
+df <- df %>%
+  mutate(Annee = year(Date))
+```
+
+Puis on crée une variable Mois :
+
+```{r, message = FALSE, warning = FALSE}
+## On crée une variable Mois
+df <- df %>% mutate(Mois = str_sub(Date, 6, 7))
+```
+
+On crée une variable Annee-Mois
+
+```{r, message = FALSE, warning = FALSE}
+## On crée une variable Année-Mois
+df <- df %>%
+  mutate(YM = paste(Annee, Mois, sep = "-"))
+```
+
+On crée une variable semaine :
+
+```{r}
+df <- df %>% mutate(Semaine = as.character(week(Date)))
+## Manquent les 0 devant les unités, ce qui posera pb pour ordonner les semaines
+df$Semaine[df$Semaine == "1"] <- "01"
+df$Semaine[df$Semaine == "2"] <- "02"
+df$Semaine[df$Semaine == "3"] <- "03"
+df$Semaine[df$Semaine == "4"] <- "04"
+df$Semaine[df$Semaine == "5"] <- "05"
+df$Semaine[df$Semaine == "6"] <- "06"
+df$Semaine[df$Semaine == "7"] <- "07"
+df$Semaine[df$Semaine == "8"] <- "08"
+df$Semaine[df$Semaine == "9"] <- "09"
+```
+
+Et une variablle annee-semaine
+
+```{r, message = FALSE, warning = FALSE}
+## On crée une variable Année-semaine
+df <- df %>%
+  mutate(YW = paste(Annee, Semaine, sep = "-"))
+```
+
+### 4.4. Classes de vocabulaire
+
+(Voir si on peut générer un système de mots clés à partir d'une analyse type LDA ?)
+
+## 5. Calcul des scores de masculinité
+
+On passe le df en format "tidy" (une ligne par mot de la variable Texte) :
+
+```{r}
+txt_tokens <- df %>%
+  select(ID_Article, Texte) %>%
+  unnest_tokens(word, Texte)
+```
+
+On ajoute une colonne de masculinité grâce à un left_join :
+
+```{r}
+txt_tokens <- left_join(txt_tokens, prenoms)
+```
+
+On calcule le score de masculinité par article.
+En l'occurrence il s'agit de la moyenne des scores de tous les mots du Texte.
+
+```{r}
+M_Rate_Txt_Pr <- txt_tokens %>%
+  group_by(ID_Article) %>%
+  summarise(M_Rate_Txt_Pr = mean(sexratio_prenom, na.rm = TRUE)) %>%
+  arrange(ID_Article)
+M_Rate_Txt_Pr
+```
+
+On ajoute la mesure au df initial
+
+```{r}
+df <- left_join(df, M_Rate_Txt_Pr)
+```
+
+## 6. Visualisation
+
+On peut visualiser l'évolution du score de masculinité par jour.
+Remarque : pour que la visualisation soit lisible il faut limiter la durée visualisée et agréger à des échelles de temps assez grandes pour ne pas avoir trop de scores à 0 ou 1.
+
+```{r}
+df %>%
+  filter(Date > "2020-01-01") %>%
+  group_by(Date, Journal_clean) %>%
+  summarise(M_Rate_Txt_Pr = mean(M_Rate_Txt_Pr, na.rm = TRUE)) %>%
+  ggplot(aes(x=Date)) +
+  ylim(0,1) +
+  geom_line(aes(y = M_Rate_Txt_Pr, group = Journal_clean, colour = Journal_clean)) +
+ # scale_x_date(date_breaks = "1 day", date_labels = "%b-%Y") +
+  theme_bw(base_size = 8) +
+  labs(title = "Indice genré synthétique par jour",
+       subtitle = "",
+       x = "Date",
+       y = "Valeur (1 = 100% d'hommes)",
+       color = "Legende") +
+  ylim(0,1) +
+  theme(legend.position="bottom")
+ # ggsave("daily_masc.pdf", plot = last_plot(), units="cm",
+ #         width=40, height=20, dpi = 300)
+```
+
+Une autre façon de faire en agrégeant à l'année et en séparant les courbes :
+
+```{r}
+df %>%
+  mutate(Annee = year(Date)) %>%
+  group_by(Annee, Journal_clean) %>%
+  summarise(M_Rate_Txt_Pr = mean(M_Rate_Txt_Pr, na.rm = TRUE)) %>%
+  ggplot(aes(x = Annee, y = M_Rate_Txt_Pr, fill = Journal_clean)) +
+  geom_line() +
+ # scale_x_date(labels = date_format("%b")) +
+  ylab("Taux moyen de Masculinité des articles (prénoms)") +
+  xlab("Année") +
+  theme_bw(base_size = 8) +
+  facet_wrap(Journal_clean ~ ., ncol=3)
+```
