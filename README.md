@@ -6,7 +6,7 @@ GenderedNews is a dashboard of gender biases in French news created with Python,
 
 ### Setup
 
-To setup this project, please refer to the [initial setup](https://gricad-gitlab.univ-grenoble-alpes.fr/getalp/genderednews/-/wikis/Contributing/Initial-setup) guide.
+To setup this project, please refer to the [initial setup](https://github.com/getalp/genderednews/wiki/Initial-setup) guide.
 
 ### Usage (simple)
 
@@ -65,13 +65,6 @@ collector = collector(scraping_mode = 'twitter')
 
 The step 3 will check if there is any articles with missing process. If the parameter 'fix' is set on 'True', all articles with missing process will be processed again and updated in the database.
 
-## Contributing
-
-Merge requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-Please read [Contributing page](https://gricad-gitlab.univ-grenoble-alpes.fr/getalp/genderednews/-/wikis/Contributing) on the Wiki for details of the process for submitting pull requests to us.
-
-See also on the Wiki [the list of contributors](https://gricad-gitlab.univ-grenoble-alpes.fr/getalp/genderednews/-/wikis/Contributors) who participated in this project.
 
 ## Built with
 
@@ -96,7 +89,7 @@ A list of the main technologies used within the project (see [`requirements.txt`
 
 ## Improvements
 
-Here will be the listed the improvements that could be added to this project.
+- The Quotation Extraction model of this project will soon be replaced from a rule-based system to a ML model!
 
 ## Data
 
@@ -111,8 +104,6 @@ List of news sources:
 - Libération : https://www.liberation.fr/
 - L'Équipe : https://www.lequipe.fr/
 - Les Échos: https://www.lesechos.fr/
-- Mediapart : https://www.mediapart.fr/
-- The Huffington Post (France) : https://www.huffingtonpost.fr/
 
 Mentions/Quotes
 
@@ -122,14 +113,11 @@ The data will permit to calculate the masculinity rates in mentions and quotes w
 
 The Canadian project [GenderGapTracker](https://gendergaptracker.informedopinions.org/) ([source](https://github.com/sfu-discourse-lab/GenderGapTracker/)) has the same goal but for Canadian news.
 
-## FAQ
-
-Here will be a list of frequently asked questions.
 
 ## License
 
-This project is licensed under the *to be defined* License - see the [`LICENSE.md`](https://gricad-gitlab.univ-grenoble-alpes.fr/getalp/genderednews/-/blob/master/LICENSE.md) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 - see the [`LICENSE`](https://github.com/getalp/genderednews/blob/main/LICENSE) file for details.
 
 ## Contact
 
-For more information about the research methodology and for questions regarding collaboration, please contact: *to be defined*.
+For more information about the research methodology and for questions regarding collaboration, please contact: francois.portet@imag.fr, gilles.bastin@iepg.fr or ange.richard@univ-grenoble-alpes.fr
