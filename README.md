@@ -1,6 +1,6 @@
 # GenderedNews - gender bias dashboard
 
-GenderedNews is a dashboard of gender biases in French news created with Python, MongoDB and Metabase. **Check out [the website]()!**
+GenderedNews is a dashboard of gender biases in French news created with Python, MongoDB and Metabase. **Check out [the website](https://gendered-news.imag.fr/genderednews/)!**
 
 ## Getting Started
 
@@ -68,7 +68,7 @@ The step 3 will check if there is any articles with missing process. If the para
 
 ## Built with
 
-A list of the main technologies used within the project (see [`requirements.txt`](https://gricad-gitlab.univ-grenoble-alpes.fr/getalp/genderednews/-/blob/master/requirements.txt) for full dependency list):
+A list of the main technologies used within the project (see [`requirements.txt`](https://github.com/getalp/genderednews/blob/main/requirements.txt) for full dependency list):
 
 * Main tools:
   * [Metabase](https://www.metabase.com/) v0.40.5 - Dashboard
